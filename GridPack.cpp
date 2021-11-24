@@ -22,6 +22,8 @@ Element::Element(int id1, int id2, int  id3, int id4, double k, std::vector<Node
 	id[3] = id4;
 	nIntegrationPoints = points;	//How many integration points there is (4 or 9 in 2d)
 
+
+
 	derivNEta = new double[nIntegrationPoints][4];
 	derivNKsi = new double[nIntegrationPoints][4];
 
@@ -42,6 +44,7 @@ Element::Element(int id1, int id2, int  id3, int id4, double k, std::vector<Node
 	for (int i1 = 0; i1 < 4; i1++) {
 		p[i1] = p1[i1];
 		for (int j1 = 0; j1 < 4; j1++) {
+			h[i1][j1] = 0;
 			hbc[i1][j1] = hbc1[i1][j1];
 		}
 	}
@@ -85,24 +88,24 @@ Element::Element(int id1, int id2, int  id3, int id4, double k, std::vector<Node
 		jacobDet = jacobian[0][0] * jacobian[1][1] - jacobian[1][0] * jacobian[0][1];	//Det of jacobian
 		jacobDetInversed = 1.0 / jacobDet;												//Inversed det of jacobian
 																						//Just printing
-		std::cout << "\ndet: " << jacobDet << " ||| detInv: " << jacobDetInversed << "\n============================================\n";
+		/*std::cout << "\ndet: " << jacobDet << " ||| detInv: " << jacobDetInversed << "\n============================================\n";
 		for (int d = 0; d < 2; d++) {
 			for (int e = 0; e < 2; e++) {
 				std::cout << jacobian[d][e] << " \t\t ";
 			}
 			std::cout << "\n";
 		}
-		std::cout << "--------------------------------------------\n";
+		std::cout << "--------------------------------------------\n";*/
 		double multiplied[2][2];													//Inversed jacobian multiplied by inversed det of jacobian
 
 		for (int i = 0; i < 2; i++) {
 			for (int j = 0; j < 2; j++) {
 				multiplied[i][j] = jacobianInversed[i][j] * jacobDetInversed;		//Above
-				std::cout << multiplied[i][j] << "\t\t";							//Aaaaand some printing as well
+				//std::cout << multiplied[i][j] << "\t\t";							//Aaaaand some printing as well
 			}
-			std::cout << "\n";
+			//std::cout << "\n";
 		}
-		std::cout << "\n\n";
+		//std::cout << "\n\n";
 
 		//============================================== Calculating H (but first deriv N/x and N/y) =========================================================
 		double derivNX[4][4];		//Helpful matrixes (1 integration point, vector multiplied by trnapsosed itself)
@@ -134,22 +137,22 @@ Element::Element(int id1, int id2, int  id3, int id4, double k, std::vector<Node
 		for (int i1 = 0; i1 < 4; i1++) {
 			for (int j1 = 0; j1 < 4; j1++) {
 				hpc[i1][j1] = weight * (derivNX[i1][j1] + derivNY[i1][j1]) * k * jacobDet;	//Comment above.
-				std::cout << hpc[i1][j1] << "\t";	//Some printing here as well
+				//std::cout << hpc[i1][j1] << "\t";	//Some printing here as well
 				h[i1][j1] += hpc[i1][j1];	//One H to rule them all, One H to find them, One H to bring them all and in the element bind them. (In one Element - isnt as powerful as hGlobal)
 			}
-			std::cout << "\n";
+			//std::cout << "\n";
 		}
 
 
 	}
-	std::cout << "\n====== H =======\n";	//Printing the one H
+	/*std::cout << "\n====== H =======\n";	//Printing the one H
 	for (int i1 = 0; i1 < 4; i1++) {
 		for (int j1 = 0; j1 < 4; j1++) {
 			std::cout << h[i1][j1] << "\t";
 		}
 		std::cout << "\n";
 	}
-	std::cout << "\n====================================== Next Element ==================================\n";
+	std::cout << "\n====================================== Next Element ==================================\n";*/
 }
 
 /*Element::~Element() {
@@ -233,12 +236,12 @@ Element* Element::create9(int id1, int id2, int  id3, int id4, double k, std::ve
 			}
 		}
 	}
-	for (int i1 = 0; i1 < 4; i1++) {
+	/*for (int i1 = 0; i1 < 4; i1++) {
 		for (int j1 = 0; j1 < 4; j1++) {
 			std::cout << hbc1[i1][j1] << "\t";
 		}
 		std::cout << "\n";
-	}
+	}*/
 	// ===============================================================================================
 	return new Element(id1, id2, id3, id4, k, nodes, 9, derivNEta1, derivNKsi1, alpha1, hbc1, tSurrounding1, p1);	//Invoking and returning constructor
 }
@@ -370,11 +373,11 @@ void Element::printHbc()
 	}
 }
 
-void Element::printP()
+void Element::printP()		// ========================================= P =========================================
 {
-	std::cout << "\n ========================================= P ========================================= \n";
+	std::cout << "\n P: \n";
 	for (int i1 = 0; i1 < 4; i1++) {
-		std::cout << p[i1] << "\n";
+		std::cout << " " << p[i1] << "\n";
 	}
 }
 
@@ -509,9 +512,11 @@ void Grid::printHGlobal() {
 }
 
 void Grid::printPGlobal() {
+	std::cout << " ============================ pGlobal ============================ \n";
+
 	for (int i = 0; i < nN; i++) {
 
-		std::cout << i+1 << ": "<< pGlobal[i] << "\n";
+		std::cout << " " << i+1 << ": "<< pGlobal[i] << "\n";
 
 	}
 

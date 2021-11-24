@@ -21,18 +21,12 @@
     <ClCompile Include="Gauss.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Elements_2D.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="GridPack.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Gauss.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Elements_2D.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GridPack.h">

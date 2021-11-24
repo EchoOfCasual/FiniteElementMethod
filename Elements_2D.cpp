@@ -4,7 +4,12 @@
 #include "GridPack.h"
 
 
-Element9_2D::Element9_2D() {
+Element9_2D::Element9_2D(int id1, int id2, int  id3, int id4, double k, std::vector<Node> nodes) {
+	id[0] = id1;
+	id[1] = id2;
+	id[2] = id3;
+	id[3] = id4;
+
 		for (int i = 0; i < 9; i++) {
 
 			double eta, ksi;
@@ -39,9 +44,10 @@ Element9_2D::Element9_2D() {
 			derivNKsi[i][2] = 0.25 * (1 + eta);
 			derivNKsi[i][3] = -0.25 * (1 + eta);
 
-
-
 		}
+		// ===================================== IMPORTANT =====================================
+		initialization(k, nodes); 
+		// ===================================== IMPORTANT =====================================
 	}
 
 void Element9_2D::printNEta() {
@@ -71,7 +77,12 @@ void Element9_2D::printNKsi() {
 	}
 
 
-Element4_2D::Element4_2D() {
+Element4_2D::Element4_2D(int id1, int id2, int  id3, int id4, double k, std::vector<Node> nodes) {
+	id[0] = id1;
+	id[1] = id2;
+	id[2] = id3;
+	id[3] = id4;
+
 		for (int i = 0; i < 4; i++) {
 			double eta, ksi;
 			if (i == 0 || i == 1) {
@@ -102,6 +113,9 @@ Element4_2D::Element4_2D() {
 
 		}
 
+		// ===================================== IMPORTANT =====================================
+		initialization(k, nodes);
+		// ===================================== IMPORTANT =====================================
 
 	}
 

@@ -139,13 +139,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Elements_2D.cpp" />
     <ClCompile Include="Gauss.cpp" />
     <ClCompile Include="GridPack.cpp" />
     <ClCompile Include="Source.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Elements_2D.h" />
     <ClInclude Include="Gauss.h" />
     <ClInclude Include="GridPack.h" />
   </ItemGroup>

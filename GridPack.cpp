@@ -15,7 +15,7 @@ void Node::print()
 	}
 
 
-Element::Element(int id1, int id2, int  id3, int id4, double k, std::vector<Node> nodes, int points, double(*derivNEta1)[4], double(*derivNKsi1)[4], double alpha1, double hbc1[4][4], double tSurrounding1, double p1[4]) {
+Element::Element(int id1, int id2, int  id3, int id4, double k, std::vector<Node> nodes, int points, double(*derivNEta1)[4], double(*derivNKsi1)[4], double alpha1, double hbc1[4][4], double tSurrounding1, double p1[4], double ro1, double specHeat1, double(*N1)[4]) {
 	id[0] = id1;					//Initialising ids of nodes creating element
 	id[1] = id2;
 	id[2] = id3;
@@ -26,6 +26,7 @@ Element::Element(int id1, int id2, int  id3, int id4, double k, std::vector<Node
 
 	derivNEta = new double[nIntegrationPoints][4];
 	derivNKsi = new double[nIntegrationPoints][4];
+	N = new double[nIntegrationPoints][4];
 
 	//derivNEta = derivNEta1;			//Assigning arrays of deriv N/Eta and N/Ksi provied by static funtion
 	//derivNKsi = derivNKsi1;			//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Ogarnij, bo sie nie wpisuje do elementu !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Juz zapisuje chyba
@@ -35,6 +36,7 @@ Element::Element(int id1, int id2, int  id3, int id4, double k, std::vector<Node
 		for (int j1 = 0; j1 < 4; j1++) {
 			derivNEta[i1][j1] = derivNEta1[i1][j1];
 			derivNKsi[i1][j1] = derivNKsi1[i1][j1];
+			N[i1][j1] = N1[i1][j1];
 		}
 	}
 
@@ -45,11 +47,14 @@ Element::Element(int id1, int id2, int  id3, int id4, double k, std::vector<Node
 		p[i1] = p1[i1];
 		for (int j1 = 0; j1 < 4; j1++) {
 			h[i1][j1] = 0;
+			c[i1][j1] = 0;
 			hbc[i1][j1] = hbc1[i1][j1];
 		}
 	}
 
 	tSurrounding = tSurrounding1; //Setting temperature of the sourrounding area
+	ro = ro1;
+	specHeat = specHeat1;
 
 	// ===================================== Calculation of H ======================================
 	for (int j = 0; j < nIntegrationPoints; j++) {
@@ -110,13 +115,19 @@ Element::Element(int id1, int id2, int  id3, int id4, double k, std::vector<Node
 		//============================================== Calculating H (but first deriv N/x and N/y) =========================================================
 		double derivNX[4][4];		//Helpful matrixes (1 integration point, vector multiplied by trnapsosed itself)
 		double derivNY[4][4];
+		double Ntemp[4][4];
 
 		for (int i1 = 0; i1 < 4; i1++) {
 			for (int j1 = 0; j1 < 4; j1++) {
 				derivNX[i1][j1] = (derivNKsi[j][i1] * multiplied[0][0] + derivNEta[j][i1] * multiplied[0][1]) * (derivNKsi[j][j1] * multiplied[0][0] + derivNEta[j][j1] * multiplied[0][1]);	//Exactly what already written above. Note: multiplied[0] is for x and multiplied[1] is for y. More visable on PDF
 				derivNY[i1][j1] = (derivNKsi[j][i1] * multiplied[1][0] + derivNEta[j][i1] * multiplied[1][1]) * (derivNKsi[j][j1] * multiplied[1][0] + derivNEta[j][j1] * multiplied[1][1]);
+
+				Ntemp[i1][j1] = N[j][i1] * N[j][j1]; //Needed to get c
+				//std::cout << Ntemp[i1][j1] << "\t";
 			}
+				//std::cout << "\n";
 		}
+		//std::cout << "\n============================\n";
 
 		double weight = 1;
 		if (nIntegrationPoints == 9) {
@@ -134,11 +145,17 @@ Element::Element(int id1, int id2, int  id3, int id4, double k, std::vector<Node
 
 		double hpc[4][4];			//Well, h but in 1 integration point!
 
+
+		//std::cout << "\n\n==============\n";
 		for (int i1 = 0; i1 < 4; i1++) {
 			for (int j1 = 0; j1 < 4; j1++) {
 				hpc[i1][j1] = weight * (derivNX[i1][j1] + derivNY[i1][j1]) * k * jacobDet;	//Comment above.
 				//std::cout << hpc[i1][j1] << "\t";	//Some printing here as well
 				h[i1][j1] += hpc[i1][j1];	//One H to rule them all, One H to find them, One H to bring them all and in the element bind them. (In one Element - isnt as powerful as hGlobal)
+
+
+				//std::cout << "weight: " << weight <<" || ro: " << ro <<" || specHeat: " << specHeat <<" || Ntemp[i1][j1]: " << Ntemp[i1][j1] <<"\n";
+				c[i1][j1] += weight * ro * specHeat * Ntemp[i1][j1] * jacobDet;
 			}
 			//std::cout << "\n";
 		}
@@ -160,10 +177,11 @@ Element::Element(int id1, int id2, int  id3, int id4, double k, std::vector<Node
 	delete derivNKsi;
 }*/
 
-Element* Element::create9(int id1, int id2, int  id3, int id4, double k, std::vector<Node> nodes, double alpha1, double tSurrounding1) {		//This thing in here is to create element9_2D, some prep for derivs N/eta and N/xsi and then invoking the actuall constructor
+Element* Element::create9(int id1, int id2, int  id3, int id4, double k, std::vector<Node> nodes, double alpha1, double tSurrounding1, double ro1, double specHeat1) {		//This thing in here is to create element9_2D, some prep for derivs N/eta and N/xsi and then invoking the actuall constructor
 
 	double derivNEta1[9][4];
 	double derivNKsi1[9][4];
+	double N1[9][4];
 
 	for (int i = 0; i < 9; i++) {
 
@@ -198,6 +216,12 @@ Element* Element::create9(int id1, int id2, int  id3, int id4, double k, std::ve
 		derivNKsi1[i][1] = 0.25 * (1 - eta);
 		derivNKsi1[i][2] = 0.25 * (1 + eta);
 		derivNKsi1[i][3] = -0.25 * (1 + eta);
+
+		N1[i][0] = 0.25 * (1 - eta) * (1 - ksi);
+		N1[i][1] = 0.25 * (1 - eta) * (1 + ksi);
+		N1[i][2] = 0.25 * (1 + eta) * (1 + ksi);
+		N1[i][3] = 0.25 * (1 + eta) * (1 - ksi);
+
 	}
 
 	// ================================== Calculation of hbc and p ========================================= Czy przeniesc do wspolnej funkcji??? I teraz tez P
@@ -243,13 +267,14 @@ Element* Element::create9(int id1, int id2, int  id3, int id4, double k, std::ve
 		std::cout << "\n";
 	}*/
 	// ===============================================================================================
-	return new Element(id1, id2, id3, id4, k, nodes, 9, derivNEta1, derivNKsi1, alpha1, hbc1, tSurrounding1, p1);	//Invoking and returning constructor
+	return new Element(id1, id2, id3, id4, k, nodes, 9, derivNEta1, derivNKsi1, alpha1, hbc1, tSurrounding1, p1, ro1, specHeat1, N1);	//Invoking and returning constructor
 }
 
-Element* Element::create4(int id1, int id2, int  id3, int id4, double k, std::vector<Node> nodes, double alpha1, double tSurrounding1) {		//This thing in here is to create element4_2D, some prep for derivs N/eta and N/xsi and then invoking the actuall constructor
+Element* Element::create4(int id1, int id2, int  id3, int id4, double k, std::vector<Node> nodes, double alpha1, double tSurrounding1, double ro1, double specHeat1) {		//This thing in here is to create element4_2D, some prep for derivs N/eta and N/xsi and then invoking the actuall constructor
 
 	double derivNEta1[4][4];
 	double derivNKsi1[4][4];
+	double N1[4][4];
 
 
 	for (int i = 0; i < 4; i++) {
@@ -277,6 +302,12 @@ Element* Element::create4(int id1, int id2, int  id3, int id4, double k, std::ve
 		derivNKsi1[i][1] = 0.25 * (1 - eta);
 		derivNKsi1[i][2] = 0.25 * (1 + eta);
 		derivNKsi1[i][3] = -0.25 * (1 + eta);
+
+
+		N1[i][0] = 0.25 * (1 - eta) * (1 - ksi);
+		N1[i][1] = 0.25 * (1 - eta) * (1 + ksi);
+		N1[i][2] = 0.25 * (1 + eta) * (1 + ksi);
+		N1[i][3] = 0.25 * (1 + eta) * (1 - ksi);
 	}
 
 	// ================================== Calculation of hbc & p =========================================
@@ -310,7 +341,7 @@ Element* Element::create4(int id1, int id2, int  id3, int id4, double k, std::ve
 
 
 
-	return new Element(id1, id2, id3, id4, k, nodes, 4, derivNEta1, derivNKsi1, alpha1, hbc1, tSurrounding1, p1);	//Invoking and returning constructor
+	return new Element(id1, id2, id3, id4, k, nodes, 4, derivNEta1, derivNKsi1, alpha1, hbc1, tSurrounding1, p1, ro1, specHeat1, N1);	//Invoking and returning constructor
 }
 
 
@@ -381,11 +412,21 @@ void Element::printP()		// ========================================= P =========
 	}
 }
 
+void Element::printC()		// ========================================= C =========================================
+{
+	std::cout << "\n ========================================= C ========================================= \n";
+	for (int i1 = 0; i1 < 4; i1++) {
+		for (int j1 = 0; j1 < 4; j1++) {
+			std::cout << c[i1][j1] << "\t";
+		}
+		std::cout << "\n";
+	}
+}
 
 
 
 
-Grid::Grid(double H1, double B1, int nH1, int nB1, int n, double k, double alpha1, double tSurrounding1) {
+Grid::Grid(double H1, double B1, int nH1, int nB1, int n, double k, double alpha1, double tSurrounding1, double ro1, double specHeat1) {
 		H = H1;						//Height
 		B = B1;						//Width
 		nH = nH1;					//Amount of nodes in height
@@ -414,10 +455,10 @@ Grid::Grid(double H1, double B1, int nH1, int nB1, int n, double k, double alpha
 				int ID3 = ID2 + 1;
 				int ID4 = ID1 + 1;
 				if (n == 4) {					//Normal case (4 4 elements in 2 d)
-					elements.push_back(*Element::create4(ID1, ID2, ID3, ID4, k, /*(not so )temp solution(it seems)*/nodes, alpha1, tSurrounding1));
+					elements.push_back(*Element::create4(ID1, ID2, ID3, ID4, k, /*(not so )temp solution(it seems)*/nodes, alpha1, tSurrounding1, ro1, specHeat1));
 				}
 				else if (n == 9) {				//Abnormal case (4 9 elements in 2 d) Not working for some devilish reason (it works now)
-					elements.push_back(*Element::create9(ID1, ID2, ID3, ID4, k, /*(not so )temp solution(it seems)*/nodes, alpha1, tSurrounding1));
+					elements.push_back(*Element::create9(ID1, ID2, ID3, ID4, k, /*(not so )temp solution(it seems)*/nodes, alpha1, tSurrounding1, ro1, specHeat1));
 				}
 				else {							//Yeee, nope
 					std::cout << "Wrong n! (Integration points)";
@@ -429,11 +470,14 @@ Grid::Grid(double H1, double B1, int nH1, int nB1, int n, double k, double alpha
 		//============================== calculating h global & p global ============================
 		for (int i = 0; i < nN; i++) {							//Initiating hGlobal with 0
 			std::vector<double> tempForTheColumns;
+			std::vector<double> tempForTheColumnsC;
 			pGlobal.push_back(0.0);								//Initialising pGlobal with 0s
 			for (int j = 0; j < nN; j++) {
 				tempForTheColumns.push_back(0.0);
+				tempForTheColumnsC.push_back(0.0);
 			}
 			hGlobal.push_back(tempForTheColumns);
+			cGlobal.push_back(tempForTheColumnsC);
 		}
 
 		for (int elementsColumns = 0; elementsColumns < nB - 1; elementsColumns++) {							//setting proper values for hGlobal
@@ -446,6 +490,8 @@ Grid::Grid(double H1, double B1, int nH1, int nB1, int n, double k, double alpha
 
 						hGlobal[elements[elementsColumns * (nH - 1) + elementRows].id[hColumns]][elements[elementsColumns * (nH - 1) + elementRows].id[hRows]] += elements[elementsColumns * (nH - 1) + elementRows].h[hColumns][hRows] + elements[elementsColumns * (nH - 1) + elementRows].hbc[hColumns][hRows];
 
+						cGlobal[elements[elementsColumns * (nH - 1) + elementRows].id[hColumns]][elements[elementsColumns * (nH - 1) + elementRows].id[hRows]] += elements[elementsColumns * (nH - 1) + elementRows].c[hColumns][hRows];
+
 
 					}
 
@@ -456,17 +502,12 @@ Grid::Grid(double H1, double B1, int nH1, int nB1, int n, double k, double alpha
 			
 		}
 
-		for (int elementsI = 0; elementsI < nE; elementsI++) {													// setting proper values for pGlobal (Probably better solution than the above)					
-
+		for (int elementsI = 0; elementsI < nE; elementsI++) {													// setting proper values for pGlobal (Probably better solution than the above)	
 			for (int pRows = 0; pRows < 4; pRows++) {
-
 				pGlobal[elements[elementsI].id[pRows]] += elements[elementsI].p[pRows];
-
-
 			}
-
-
 		}
+
 
 
 	}
@@ -517,6 +558,73 @@ void Grid::printPGlobal() {
 	for (int i = 0; i < nN; i++) {
 
 		std::cout << " " << i+1 << ": "<< pGlobal[i] << "\n";
+
+	}
+
+}
+
+
+void Grid::solution_t() {
+	int i, j, k;
+	double m, s;
+	int n = hGlobal.size();
+
+	t.resize(n, 0);
+
+	std::vector<std::vector<double>> array = hGlobal;
+	//array.push_back(pGlobal);
+	for (int i = 0; i < n; i++) {
+		array[i].push_back(pGlobal[i]);
+	}
+
+	// eliminacja wspó³czynników
+	for (i = 0; i < n - 1; i++)
+	{
+		for (j = i + 1; j < n; j++)
+		{
+			if (array[i][i] == 0.0) { std::cout << "Operacja powiod³a sie"; return; }
+			m = -array[j][i] / array[i][i];
+			for (k = i + 1; k <= n; k++)
+				array[j][k] += m * array[i][k];
+		}
+	}
+
+	// wyliczanie niewiadomych
+
+	for (i = n - 1; i >= 0; i--)
+	{
+		s = array[i][n];
+		for (j = n - 1; j >= i + 1; j--)
+			s -= array[i][j] * t[j];
+		if (array[i][i] == 0.0) { std::cout << "Operacja nie powiod³a sie"; return; }
+		t[i] = s / array[i][i];
+	}
+
+	std::cout << "Operacja powiod³a sie";
+	return;
+
+}
+
+void Grid::printT() {
+	std::cout << " ============================ t ============================ \n";
+
+	for (int i = 0; i < nN; i++) {
+
+		std::cout << " " << i + 1 << ": " << t[i] << "\n";
+
+	}
+
+}
+
+void Grid::printCGlobal() {
+	for (int i = 0; i < nN; i++) {
+
+		for (int j = 0; j < nN; j++)
+		{
+			std::cout << cGlobal[i][j] << " || ";
+		}
+
+		std::cout << "\n";
 
 	}
 

@@ -3,6 +3,10 @@
 #include<iostream>
 #include<math.h>
 
+#include <algorithm>
+
+
+
 Node::Node(double x1, double y1, short int bc1) {
 		x = x1;						//Coord x
 		y = y1;						//Coord y
@@ -628,19 +632,27 @@ std::vector<double> Grid::final_solution_t(double tau, std::vector<double> initi
 	std::vector<double> output = initialTemp;
 
 	for (int i = 0; i < iterationsNumber; i++) {
-		Grid newValuesCalculation = Grid(H, B, nH, nB, nIntegrationPoints, k1, alpha, tSurrounding, 7800.0, 700.0); // w Tym przypadku pozostaj¹ takie same, ale ogólnie gêstoœæ i ciep³o w³aœciwe mog¹ siê zmieniaæ. W tym miejscu okazuje sie, ¿e lepszym wzorcem od metody wytwórczej by³by builder, wczeœniej nie wiedzia³em, ¿e bêdzie wykorzystywane coœ takiego, a teraz niestety refaktoryzacja zajê³aby za du¿o czasu
+		/*Grid newValuesCalculation = Grid(H, B, nH, nB, nIntegrationPoints, k1, alpha, tSurrounding, 7800.0, 700.0); // w Tym przypadku pozostaj¹ takie same, ale ogólnie gêstoœæ i ciep³o w³aœciwe mog¹ siê zmieniaæ. W tym miejscu okazuje sie, ¿e lepszym wzorcem od metody wytwórczej by³by builder, wczeœniej nie wiedzia³em, ¿e bêdzie wykorzystywane coœ takiego, a teraz niestety refaktoryzacja zajê³aby za du¿o czasu
 		nodes = newValuesCalculation.nodes;
 		elements = newValuesCalculation.elements;
 		hGlobal = newValuesCalculation.hGlobal;
 		cGlobal = newValuesCalculation.cGlobal;
-		pGlobal = newValuesCalculation.pGlobal;
+		pGlobal = newValuesCalculation.pGlobal;*/
 
 		output = solution_t(tau, output);
 
-		std::cout << "======== " << i+1 << " ========" << std::endl;
+		std::cout << "======== " << i + 1 << " ========" << std::endl;
+		std::cout << "\nMin Element = "
+			<< *std::min_element(output.begin(), output.end());
+
+
+		std::cout << "\nMax Element = "
+			<< *std::max_element(output.begin(), output.end());
+		
+		/*std::cout << "======== " << i+1 << " ========" << std::endl;
 		for (int i = 0; i < hGlobal.size(); i++) {
 			std::cout << output[i] << std::endl;
-		}
+		}*/
 		
 
 	}

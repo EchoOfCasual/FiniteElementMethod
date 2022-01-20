@@ -41,21 +41,13 @@ public:
 	//void initialization(double k, std::vector<Node> nodes);
 
 	void printids();
-
 	int* returnIdsArrayPointer();
-
 	void printNEta();
-
 	void printNKsi();
-
 	void printH();
-
 	void printHbc();
-
 	void printP();
-
 	void printC();
-
 };
 
 
@@ -68,10 +60,14 @@ public:
 	int nB;		//Iloœæ nodów w szerokoœci
 	int nN;		//Iloœæ wszystkich nodów
 	int nE;		//Iloœæ wszystkich elementów
-	std::vector<std::vector<double>> hGlobal; //One H to rule them all, One H to find them, One H to bring them all and in the element bind them. (Potezne H calej siatki)
-	std::vector<std::vector<double>> cGlobal; //One H to rule them all, One H to find them, One H to bring them all and in the element bind them. (Potezne H calej siatki)
+	int nIntegrationPoints;
+	double k1;		//Wspolczynnik do liczenia h (dla materialu)
+	double alpha;	//Wspolczynnik konwekcji do liczenia hbc
+	double tSurrounding; //Temperatrua otoczenia
+	std::vector<std::vector<double>> hGlobal; //One H to rule them all, One H to find them, One H to bring them all and in the grid bind them. (Potezne H calej siatki)
+	std::vector<std::vector<double>> cGlobal; //One C to rule them all, One C to find them, One C to bring them all and in the grid bind them. (Potezne C calej siatki)
 	std::vector<double> pGlobal; //P as above for p
-	std::vector<double> t;
+
 
 	double deltaH;	//Wysokoœæ jednego elementu
 	double deltaB;	//Szerokoœæ jednego elementu
@@ -82,18 +78,14 @@ public:
 	Grid(double H1, double B1, int nH1, int nB1, int n = 4, double k = 30.0, double alpha1 = 25.0, double tSurrounding = 1200.0, double ro1 = 7800.0, double specHeat1 = 700.0);
 
 	void printAllElements();
-
 	void printEntireGrid();
-
 	void printHGlobal();
-
 	void printPGlobal();
-
-	void solution_t();
-
-	void printT();
-
 	void printCGlobal();
+
+	std::vector<double> solution_t(double tau, std::vector<double> initialTemp);
+	//void printT();
+	std::vector<double> final_solution_t(double tau, std::vector<double> initialTemp, int iterationsNumber);
 
 
 };

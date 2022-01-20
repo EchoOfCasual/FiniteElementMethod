@@ -29,10 +29,10 @@ Element::Element(int id1, int id2, int  id3, int id4, double k, std::vector<Node
 	N = new double[nIntegrationPoints][4];
 
 	//derivNEta = derivNEta1;			//Assigning arrays of deriv N/Eta and N/Ksi provied by static funtion
-	//derivNKsi = derivNKsi1;			//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Ogarnij, bo sie nie wpisuje do elementu !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Juz zapisuje chyba
+	//derivNKsi = derivNKsi1;			//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Ogarnij, bo sie nie wpisuje do elementu !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Juz zapisuje
 
 
-	for (int i1 = 0; i1 < nIntegrationPoints; i1++) {
+	for (int i1 = 0; i1 < nIntegrationPoints; i1++) { //Assigning arrays of deriv N/Eta and N/Ksi and N (shape functions) provied by static funtion, line 31 does not work
 		for (int j1 = 0; j1 < 4; j1++) {
 			derivNEta[i1][j1] = derivNEta1[i1][j1];
 			derivNKsi[i1][j1] = derivNKsi1[i1][j1];
@@ -40,10 +40,10 @@ Element::Element(int id1, int id2, int  id3, int id4, double k, std::vector<Node
 		}
 	}
 
-	k1 = k;
+	k1 = k;											// Assigning valuses k and alpha from static...
 	alpha = alpha1;
 
-	for (int i1 = 0; i1 < 4; i1++) {
+	for (int i1 = 0; i1 < 4; i1++) {				// Assigning valuses p and hbc from static & initialising h & c
 		p[i1] = p1[i1];
 		for (int j1 = 0; j1 < 4; j1++) {
 			h[i1][j1] = 0;
@@ -53,7 +53,7 @@ Element::Element(int id1, int id2, int  id3, int id4, double k, std::vector<Node
 	}
 
 	tSurrounding = tSurrounding1; //Setting temperature of the sourrounding area
-	ro = ro1;
+	ro = ro1;					// Assigning ro form static and specific heat
 	specHeat = specHeat1;
 
 	// ===================================== Calculation of H ======================================
@@ -64,7 +64,7 @@ Element::Element(int id1, int id2, int  id3, int id4, double k, std::vector<Node
 		jacobian[1][0] = 0;
 		jacobian[1][1] = 0;
 		
-									//Calculating jacobian (x and y for both xsi and eta) in 4 shape functions (nodes?)
+									//Calculating jacobian (x and y for both xsi and eta) in 4 nodes
 		for (int i = 0; i < 4; i++) {
 			jacobian[0][0] += derivNKsi[j][i] * nodes[id[i]].x;
 			jacobian[0][1] += derivNKsi[j][i] * nodes[id[i]].y;
@@ -118,7 +118,7 @@ Element::Element(int id1, int id2, int  id3, int id4, double k, std::vector<Node
 		double Ntemp[4][4];
 
 		for (int i1 = 0; i1 < 4; i1++) {
-			for (int j1 = 0; j1 < 4; j1++) {
+			for (int j1 = 0; j1 < 4; j1++) {	//It is actually derivNX * derivNXW^T and the same with Y, just a note
 				derivNX[i1][j1] = (derivNKsi[j][i1] * multiplied[0][0] + derivNEta[j][i1] * multiplied[0][1]) * (derivNKsi[j][j1] * multiplied[0][0] + derivNEta[j][j1] * multiplied[0][1]);	//Exactly what already written above. Note: multiplied[0] is for x and multiplied[1] is for y. More visable on PDF
 				derivNY[i1][j1] = (derivNKsi[j][i1] * multiplied[1][0] + derivNEta[j][i1] * multiplied[1][1]) * (derivNKsi[j][j1] * multiplied[1][0] + derivNEta[j][j1] * multiplied[1][1]);
 
@@ -224,7 +224,7 @@ Element* Element::create9(int id1, int id2, int  id3, int id4, double k, std::ve
 
 	}
 
-	// ================================== Calculation of hbc and p ========================================= Czy przeniesc do wspolnej funkcji??? I teraz tez P
+	// ================================== Calculation of hbc and p ========================================= Czy przeniesc do wspolnej funkcji??? I teraz tez P (nope: niby kilka powtorzonych linijek, ale nie ma czasu i bedzie sie gorzej czytac)
 	double hbc1[4][4] = { {0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0} };
 	double p1[4] = {0,0,0,0};
 	int ids[4] = { id1, id2, id3, id4 };
@@ -235,7 +235,7 @@ Element* Element::create9(int id1, int id2, int  id3, int id4, double k, std::ve
 			double tempPc2[4] = { 0,0,0,0 };
 			double tempPc3[4] = { 0,0,0,0 };
 
-			tempPc1[i] = (1.0 - sqrt(3.0/5.0)) / 2.0;
+			tempPc1[i] = (1.0 - sqrt(3.0/5.0)) / 2.0;			//Cakculating x of point in 0 -> 1 (instead of -1 -> 1) (from -1 -> 1 Gauss to 0 -> 1 ez representation of shape func value)
 			tempPc1[(i + 1) % 4] = 1 - tempPc1[i];
 
 			tempPc2[(i + 1) % 4] = 0.5;
@@ -293,7 +293,7 @@ Element* Element::create4(int id1, int id2, int  id3, int id4, double k, std::ve
 			ksi = 1 / sqrt(3);
 		}
 
-		derivNEta1[i][0] = -0.25 * (1 - ksi);
+		derivNEta1[i][0] = -0.25 * (1 - ksi);		// deriv N/eta in integr points (0.25 not 0.5 cause in 0 -> 1)
 		derivNEta1[i][1] = -0.25 * (1 + ksi);
 		derivNEta1[i][2] = 0.25 * (1 + ksi);
 		derivNEta1[i][3] = 0.25 * (1 - ksi);
@@ -304,7 +304,7 @@ Element* Element::create4(int id1, int id2, int  id3, int id4, double k, std::ve
 		derivNKsi1[i][3] = -0.25 * (1 + eta);
 
 
-		N1[i][0] = 0.25 * (1 - eta) * (1 - ksi);
+		N1[i][0] = 0.25 * (1 - eta) * (1 - ksi);	//Shape func in integration points
 		N1[i][1] = 0.25 * (1 - eta) * (1 + ksi);
 		N1[i][2] = 0.25 * (1 + eta) * (1 + ksi);
 		N1[i][3] = 0.25 * (1 + eta) * (1 - ksi);
@@ -320,13 +320,13 @@ Element* Element::create4(int id1, int id2, int  id3, int id4, double k, std::ve
 			double tempPc1[4] = { 0,0,0,0 };
 			double tempPc2[4] = { 0,0,0,0 };
 
-			tempPc1[i] = (1.0 - 1.0 / sqrt(3)) / 2.0;
+			tempPc1[i] = (1.0 - 1.0 / sqrt(3)) / 2.0;				
 			tempPc1[(i + 1) % 4] = 1 - ((1.0 - 1.0 / sqrt(3)) / 2.0);
 
 			tempPc2[(i + 1) % 4] = (1.0 - 1.0 / sqrt(3)) / 2.0;
 			tempPc2[i] = 1 - ((1.0 - 1.0 / sqrt(3)) / 2.0);
 
-			double detJ1 = (sqrt( pow(nodes[ids[i]].x - nodes[ids[(i + 1) % 4]].x, 2) + pow(nodes[ids[i]].y - nodes[ids[(i + 1) % 4]].y, 2) )) / 2.0;	//Dlugosc boku przed 2 -> det jakobianu
+			double detJ1 = (sqrt( pow(nodes[ids[i]].x - nodes[ids[(i + 1) % 4]].x, 2) + pow(nodes[ids[i]].y - nodes[ids[(i + 1) % 4]].y, 2) )) / 2.0;	//Dlugosc boku przez 2 -> det jakobianu
 
 			for (int hbcRow = 0; hbcRow < 4; hbcRow++) {
 				p1[hbcRow] += tempPc1[hbcRow] * tSurrounding1 * alpha1 * detJ1;
@@ -433,6 +433,10 @@ Grid::Grid(double H1, double B1, int nH1, int nB1, int n, double k, double alpha
 		nB = nB1;					//Amount of nodes in width
 		nN = nH * nB;				//Amount of nodes overall
 		nE = (nH - 1) * (nB - 1);	//Amount of elements
+		nIntegrationPoints = n;
+		k1 = k;
+		alpha = alpha1;
+		tSurrounding = tSurrounding1;
 
 		deltaH = H / (nH - 1);		//Height of one element (if elements are the same)
 		deltaB = B / (nB - 1);		//Width of one element
@@ -448,7 +452,7 @@ Grid::Grid(double H1, double B1, int nH1, int nB1, int n, double k, double alpha
 				nodes.push_back(Node(i * deltaB, j * deltaH, bc));
 			}
 		}
-		for (int i = 0; i < (nB - 1); i++) {	//Creating elements
+		for (int i = 0; i < (nB - 1); i++) {	//Creating elements 
 			for (int j = 0; j < (nH - 1); j++) {
 				int ID1 = (j + (nH)*i);			//Calculating which nodes element is consisted of
 				int ID2 = ID1 + nH;				
@@ -564,17 +568,30 @@ void Grid::printPGlobal() {
 }
 
 
-void Grid::solution_t() {
+std::vector<double> Grid::solution_t(double tau, std::vector<double> initialTemp) {
 	int i, j, k;
 	double m, s;
 	int n = hGlobal.size();
 
+	std::vector<double> t;
 	t.resize(n, 0);
 
 	std::vector<std::vector<double>> array = hGlobal;
+
+	std::vector<double> initialTempVector;
+	initialTempVector.resize(n,0);
+
+	for(int i =0; i < hGlobal.size(); i++) {
+		for(int j =0; j < hGlobal.size(); j++) {
+			array[i][j] += cGlobal[i][j]/tau;
+			initialTempVector[i] += cGlobal[i][j]/tau *initialTemp[j];
+		}
+		//std::cout << pGlobal[i] + initialTempVector[i] << std::endl;
+	}
+
 	//array.push_back(pGlobal);
 	for (int i = 0; i < n; i++) {
-		array[i].push_back(pGlobal[i]);
+		array[i].push_back((pGlobal[i]+initialTempVector[i]));
 	}
 
 	// eliminacja wspó³czynników
@@ -582,7 +599,7 @@ void Grid::solution_t() {
 	{
 		for (j = i + 1; j < n; j++)
 		{
-			if (array[i][i] == 0.0) { std::cout << "Operacja powiod³a sie"; return; }
+			if (array[i][i] == 0.0) { std::cout << "Operacja powiod³a sie"; return {}; }
 			m = -array[j][i] / array[i][i];
 			for (k = i + 1; k <= n; k++)
 				array[j][k] += m * array[i][k];
@@ -596,16 +613,42 @@ void Grid::solution_t() {
 		s = array[i][n];
 		for (j = n - 1; j >= i + 1; j--)
 			s -= array[i][j] * t[j];
-		if (array[i][i] == 0.0) { std::cout << "Operacja nie powiod³a sie"; return; }
+		if (array[i][i] == 0.0) { std::cout << "Operacja nie powiod³a sie"; return {}; }
 		t[i] = s / array[i][i];
 	}
 
-	std::cout << "Operacja powiod³a sie";
-	return;
+	//std::cout << "Operacja powiod³a sie";
+	return t;
 
 }
 
-void Grid::printT() {
+std::vector<double> Grid::final_solution_t(double tau, std::vector<double> initialTemp, int iterationsNumber) {
+
+
+	std::vector<double> output = initialTemp;
+
+	for (int i = 0; i < iterationsNumber; i++) {
+		Grid newValuesCalculation = Grid(H, B, nH, nB, nIntegrationPoints, k1, alpha, tSurrounding, 7800.0, 700.0); // w Tym przypadku pozostaj¹ takie same, ale ogólnie gêstoœæ i ciep³o w³aœciwe mog¹ siê zmieniaæ. W tym miejscu okazuje sie, ¿e lepszym wzorcem od metody wytwórczej by³by builder, wczeœniej nie wiedzia³em, ¿e bêdzie wykorzystywane coœ takiego, a teraz niestety refaktoryzacja zajê³aby za du¿o czasu
+		nodes = newValuesCalculation.nodes;
+		elements = newValuesCalculation.elements;
+		hGlobal = newValuesCalculation.hGlobal;
+		cGlobal = newValuesCalculation.cGlobal;
+		pGlobal = newValuesCalculation.pGlobal;
+
+		output = solution_t(tau, output);
+
+		std::cout << "======== " << i+1 << " ========" << std::endl;
+		for (int i = 0; i < hGlobal.size(); i++) {
+			std::cout << output[i] << std::endl;
+		}
+		
+
+	}
+	return output;
+
+}
+
+/*void Grid::printT() {
 	std::cout << " ============================ t ============================ \n";
 
 	for (int i = 0; i < nN; i++) {
@@ -614,7 +657,7 @@ void Grid::printT() {
 
 	}
 
-}
+}*/
 
 void Grid::printCGlobal() {
 	for (int i = 0; i < nN; i++) {
